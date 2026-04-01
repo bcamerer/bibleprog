@@ -1,20 +1,30 @@
 import { useState, useEffect } from "react";
-import { BIBLE_BOOKS, TOTAL_CHAPTERS } from "../lib/bible-data";
+import { BIBLE_BOOKS, TOTAL_WORDS, TOTAL_CHAPTERS } from "../lib/bible-data";
 import { Progress } from "@/components/ui/progress";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { BookOpen, Award, CheckCircle2 } from "lucide-react";
+import { BookOpen, Award, CheckCircle2, ChevronRight, Save, Database } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
-  // Use localStorage to persist state for the mockup
   const [completedChapters, setCompletedChapters] = useState<Record<string, number[]>>(() => {
     const saved = localStorage.getItem('bible-tracker-progress');
     return saved ? JSON.parse(saved) : {};
   });
 
   const [activeTestament, setActiveTestament] = useState<"OT" | "NT">("OT");
-  const [activeBook, setActiveBook] = useState<string>("Genesis");
+  const [activeBook, setActiveBook] = useState<string | null>(null);
+  
+  const { toast } = useToast();
 
   useEffect(() => {
     localStorage.setItem('bible-tracker-progress', JSON.stringify(completedChapters));
@@ -38,14 +48,27 @@ export default function Home() {
     return (completedChapters[bookName] || []).length;
   };
 
-  const getTotalCompleted = () => {
-    return Object.values(completedChapters).reduce((acc, curr) => acc + curr.length, 0);
+  const getCompletedWords = () => {
+    return BIBLE_BOOKS.reduce((total, book) => {
+      const completedCount = getBookProgress(book.name);
+      // Approximate words per chapter for this book
+      const wordsPerChapter = book.words / book.chapters;
+      return total + (completedCount * wordsPerChapter);
+    }, 0);
   };
 
-  const totalCompleted = getTotalCompleted();
-  const progressPercentage = (totalCompleted / TOTAL_CHAPTERS) * 100;
+  const totalCompletedWords = getCompletedWords();
+  const progressPercentage = (totalCompletedWords / TOTAL_WORDS) * 100;
 
-  const currentBookData = BIBLE_BOOKS.find(b => b.name === activeBook) || BIBLE_BOOKS[0];
+  const currentBookData = activeBook ? BIBLE_BOOKS.find(b => b.name === activeBook) : null;
+
+  const handleSaveToDatabase = () => {
+    // In a real app, this would save to the database
+    toast({
+      title: "Saving to database...",
+      description: "This feature requires a backend database connection.",
+    });
+  };
 
   return (
     <div className="min-h-screen pb-20">
@@ -57,137 +80,174 @@ export default function Home() {
               <div className="bg-primary/10 p-2 rounded-xl">
                 <BookOpen className="w-6 h-6 text-primary" />
               </div>
-              <h1 className="text-2xl font-serif font-bold text-foreground">Lumina</h1>
+              <h1 className="text-2xl font-serif font-bold text-foreground cursor-pointer" onClick={() => setActiveBook(null)}>Lumina</h1>
             </div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
-              <Award className="w-4 h-4 text-primary" />
-              <span>{totalCompleted} / {TOTAL_CHAPTERS} Chapters</span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
+                <Award className="w-4 h-4 text-primary" />
+                <span className="hidden sm:inline">{Math.round(totalCompletedWords).toLocaleString()} / {TOTAL_WORDS.toLocaleString()} Words</span>
+              </div>
+              <Button onClick={handleSaveToDatabase} variant="outline" size="sm" className="gap-2">
+                <Database className="w-4 h-4 text-primary" />
+                <span className="hidden sm:inline">Save Progress</span>
+              </Button>
             </div>
           </div>
           
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="font-medium text-foreground">Overall Journey</span>
-              <span className="font-serif font-bold text-primary">{progressPercentage.toFixed(1)}%</span>
+              <span className="font-medium text-foreground">Overall Journey (by word count)</span>
+              <span className="font-serif font-bold text-primary">{progressPercentage.toFixed(2)}%</span>
             </div>
             <Progress value={progressPercentage} className="h-3" />
           </div>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-[280px_1fr] gap-8">
+      <main className="max-w-4xl mx-auto px-4 py-8">
         
-        {/* Sidebar - Book Navigation */}
-        <div className="space-y-6">
-          {/* Testament Toggle */}
-          <div className="flex p-1 bg-muted rounded-lg">
-            <button
-              onClick={() => { setActiveTestament("OT"); setActiveBook("Genesis"); }}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
-                activeTestament === "OT" 
-                  ? "bg-background text-foreground shadow-sm" 
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Old Testament
-            </button>
-            <button
-              onClick={() => { setActiveTestament("NT"); setActiveBook("Matthew"); }}
-              className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
-                activeTestament === "NT" 
-                  ? "bg-background text-foreground shadow-sm" 
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              New Testament
-            </button>
-          </div>
+        {!activeBook ? (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Library View */}
+            <div className="flex p-1 bg-muted rounded-lg max-w-md mx-auto">
+              <button
+                onClick={() => setActiveTestament("OT")}
+                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                  activeTestament === "OT" 
+                    ? "bg-background text-foreground shadow-sm" 
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Old Testament
+              </button>
+              <button
+                onClick={() => setActiveTestament("NT")}
+                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
+                  activeTestament === "NT" 
+                    ? "bg-background text-foreground shadow-sm" 
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                New Testament
+              </button>
+            </div>
 
-          <Card className="border-border/50 shadow-sm bg-card/50 backdrop-blur-sm">
-            <ScrollArea className="h-[calc(100vh-300px)]">
-              <div className="p-3 flex flex-col gap-1">
-                {BIBLE_BOOKS.filter(b => b.testament === activeTestament).map(book => {
-                  const completed = getBookProgress(book.name);
-                  const isDone = completed === book.chapters;
-                  const isActive = activeBook === book.name;
-                  
-                  return (
-                    <button
-                      key={book.name}
-                      onClick={() => setActiveBook(book.name)}
-                      className={`flex items-center justify-between w-full p-3 rounded-lg text-left transition-all ${
-                        isActive 
-                          ? "bg-primary text-primary-foreground shadow-md" 
-                          : "hover:bg-muted text-foreground"
-                      }`}
-                    >
-                      <span className={`font-serif ${isActive ? 'font-bold' : ''}`}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {BIBLE_BOOKS.filter(b => b.testament === activeTestament).map(book => {
+                const completed = getBookProgress(book.name);
+                const isDone = completed === book.chapters;
+                
+                return (
+                  <button
+                    key={book.name}
+                    onClick={() => setActiveBook(book.name)}
+                    className="flex flex-col p-5 rounded-xl border border-border/50 bg-card hover:border-primary/40 hover:shadow-md transition-all text-left group"
+                  >
+                    <div className="flex items-center justify-between w-full mb-3">
+                      <span className="font-serif text-lg font-bold group-hover:text-primary transition-colors">
                         {book.name}
                       </span>
                       {isDone ? (
-                        <CheckCircle2 className={`w-4 h-4 ${isActive ? 'text-primary-foreground' : 'text-primary'}`} />
+                        <CheckCircle2 className="w-5 h-5 text-primary" />
                       ) : (
-                        <span className={`text-xs ${isActive ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                        <span className="text-xs font-medium px-2 py-1 bg-muted rounded-full text-muted-foreground">
                           {completed}/{book.chapters}
                         </span>
                       )}
-                    </button>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-          </Card>
-        </div>
-
-        {/* Content - Chapter Checklist */}
-        <div>
-          <div className="mb-8">
-            <h2 className="text-4xl font-serif font-bold text-foreground mb-2">{currentBookData.name}</h2>
-            <div className="flex items-center gap-4 text-muted-foreground">
-              <span>{currentBookData.chapters} Chapters</span>
-              <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
-              <span>{getBookProgress(currentBookData.name)} Completed</span>
+                    </div>
+                    <Progress value={(completed / book.chapters) * 100} className="h-1.5 w-full bg-muted" />
+                  </button>
+                );
+              })}
             </div>
-            
-            <Progress 
-              value={(getBookProgress(currentBookData.name) / currentBookData.chapters) * 100} 
-              className="h-1 mt-6"
-            />
           </div>
+        ) : (
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {/* Book Detail View */}
+            <Breadcrumb>
+              <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink onClick={() => setActiveBook(null)} className="cursor-pointer">Library</BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbLink onClick={() => {
+                    setActiveTestament(currentBookData?.testament as "OT"|"NT");
+                    setActiveBook(null);
+                  }} className="cursor-pointer">
+                    {currentBookData?.testament === "OT" ? "Old Testament" : "New Testament"}
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator />
+                <BreadcrumbItem>
+                  <BreadcrumbPage className="font-serif font-bold text-primary">{currentBookData?.name}</BreadcrumbPage>
+                </BreadcrumbItem>
+              </BreadcrumbList>
+            </Breadcrumb>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-            {Array.from({ length: currentBookData.chapters }, (_, i) => i + 1).map(chapter => {
-              const isChecked = (completedChapters[currentBookData.name] || []).includes(chapter);
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-border/50 pb-6">
+              <div>
+                <h2 className="text-4xl font-serif font-bold text-foreground mb-2">{currentBookData?.name}</h2>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
+                  <span>{currentBookData?.chapters} Chapters</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary/40 hidden sm:block" />
+                  <span>~{currentBookData?.words.toLocaleString()} Words</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary/40 hidden sm:block" />
+                  <span className="text-foreground font-medium">{getBookProgress(currentBookData!.name)} Completed</span>
+                </div>
+              </div>
               
-              return (
-                <label
-                  key={`${currentBookData.name}-${chapter}`}
-                  className={`
-                    relative flex flex-col items-center justify-center p-4 rounded-xl cursor-pointer
-                    border-2 transition-all duration-200
-                    ${isChecked 
-                      ? 'border-primary bg-primary/5 text-primary shadow-sm' 
-                      : 'border-border bg-card hover:border-primary/50 text-foreground hover:bg-muted/50'
-                    }
-                  `}
-                >
-                  <Checkbox 
-                    checked={isChecked}
-                    onCheckedChange={() => toggleChapter(currentBookData.name, chapter)}
-                    className="absolute top-2 right-2 opacity-0" 
-                    // Hide the actual checkbox, we use the whole card as the hit target
-                  />
-                  <span className="text-sm font-medium uppercase tracking-widest text-muted-foreground mb-1">
-                    Chapter
-                  </span>
-                  <span className={`text-3xl font-serif ${isChecked ? 'font-bold' : ''}`}>
-                    {chapter}
-                  </span>
-                </label>
-              );
-            })}
+              <Button 
+                variant={getBookProgress(currentBookData!.name) === currentBookData?.chapters ? "outline" : "default"}
+                onClick={() => {
+                  const isAllDone = getBookProgress(currentBookData!.name) === currentBookData?.chapters;
+                  const allChapters = Array.from({ length: currentBookData!.chapters }, (_, i) => i + 1);
+                  setCompletedChapters(prev => ({
+                    ...prev,
+                    [currentBookData!.name]: isAllDone ? [] : allChapters
+                  }));
+                }}
+              >
+                {getBookProgress(currentBookData!.name) === currentBookData?.chapters ? "Uncheck All" : "Mark All Complete"}
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {Array.from({ length: currentBookData!.chapters }, (_, i) => i + 1).map(chapter => {
+                const isChecked = (completedChapters[currentBookData!.name] || []).includes(chapter);
+                
+                return (
+                  <label
+                    key={`${currentBookData!.name}-${chapter}`}
+                    className={`
+                      relative flex flex-col items-center justify-center p-6 rounded-2xl cursor-pointer
+                      border-2 transition-all duration-300 transform hover:scale-[1.02]
+                      ${isChecked 
+                        ? 'border-primary bg-primary/10 text-primary shadow-sm' 
+                        : 'border-border bg-card hover:border-primary/50 text-foreground hover:shadow-md'
+                      }
+                    `}
+                  >
+                    <Checkbox 
+                      checked={isChecked}
+                      onCheckedChange={() => toggleChapter(currentBookData!.name, chapter)}
+                      className="absolute top-3 right-3 opacity-0" 
+                    />
+                    <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-2">
+                      Chapter
+                    </span>
+                    <span className={`text-4xl font-serif ${isChecked ? 'font-bold' : ''}`}>
+                      {chapter}
+                    </span>
+                    {isChecked && (
+                      <div className="absolute inset-0 border-2 border-primary rounded-2xl animate-in zoom-in duration-300 pointer-events-none" />
+                    )}
+                  </label>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
       </main>
     </div>
