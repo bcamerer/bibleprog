@@ -3,7 +3,7 @@ import { BIBLE_BOOKS, TOTAL_WORDS, TOTAL_CHAPTERS } from "../lib/bible-data";
 import { Progress } from "@/components/ui/progress";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BookOpen, Award, CheckCircle2, ChevronRight, Save, Database } from "lucide-react";
+import { BookOpen, Award, CheckCircle2, ChevronRight, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Breadcrumb,
@@ -62,13 +62,7 @@ export default function Home() {
 
   const currentBookData = activeBook ? BIBLE_BOOKS.find(b => b.name === activeBook) : null;
 
-  const handleSaveToDatabase = () => {
-    // In a real app, this would save to the database
-    toast({
-      title: "Saving to database...",
-      description: "This feature requires a backend database connection.",
-    });
-  };
+
 
   return (
     <div className="min-h-screen pb-20">
@@ -87,10 +81,6 @@ export default function Home() {
                 <Award className="w-4 h-4 text-primary" />
                 <span className="hidden sm:inline">{Math.round(totalCompletedWords).toLocaleString()} / {TOTAL_WORDS.toLocaleString()} Words</span>
               </div>
-              <Button onClick={handleSaveToDatabase} variant="outline" size="sm" className="gap-2">
-                <Database className="w-4 h-4 text-primary" />
-                <span className="hidden sm:inline">Save Progress</span>
-              </Button>
             </div>
           </div>
           
