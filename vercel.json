@@ -1,4 +1,8 @@
 {
   "buildCommand": "npm run build",
-  "framework": "nodejs"
+  "framework": "nodejs",
+  "env": {
+    "VERCEL": "true",
+    "NODE_ENV": "production"
+  }
 }
