@@ -14,6 +14,7 @@ app.use(express.urlencoded({ extended: false }));
 const serveIndex = (res, publicDir) => {
   const indexPath = path.join(publicDir, 'index.html');
   if (fs.existsSync(indexPath)) {
+    res.set('Content-Type', 'text/html; charset=utf-8');
     res.sendFile(indexPath);
   } else {
     res.status(404).json({ error: 'Not found' });
@@ -27,8 +28,17 @@ app.get('/api/health', (req, res) => {
 
 // Serve static files from dist/public
 const publicDir = path.join(process.cwd(), 'dist', 'public');
+console.log('[Handler] Public directory:', publicDir);
+console.log('[Handler] Exists:', fs.existsSync(publicDir));
+
 if (fs.existsSync(publicDir)) {
-  app.use(express.static(publicDir));
+  app.use(express.static(publicDir, {
+    setHeaders: (res, path) => {
+      if (path.endsWith('.html')) {
+        res.set('Content-Type', 'text/html; charset=utf-8');
+      }
+    }
+  }));
   
   // SPA fallback - serve index.html for all unmatched routes
   app.get('*', (req, res) => {
@@ -44,6 +54,7 @@ if (fs.existsSync(publicDir)) {
 export default (req, res) => {
   return app(req, res);
 };
+
 
 
 
