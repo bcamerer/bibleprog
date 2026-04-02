@@ -3,12 +3,19 @@
   "functions": {
     "api/index.js": {
       "maxDuration": 60,
-      "memory": 512
+      "memory": 512,
+      "runtime": "nodejs20.x"
     }
   },
-  "headers": [
+  "rewrites": [
     {
       "source": "/(.*)",
+      "destination": "/api/index.js"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
