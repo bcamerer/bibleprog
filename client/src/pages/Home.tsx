@@ -180,7 +180,6 @@ export default function Home() {
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground">
                   <span>{currentBookData?.chapters} Chapters</span>
                   <div className="w-1.5 h-1.5 rounded-full bg-primary/40 hidden sm:block" />
-                  <span>~{currentBookData?.words.toLocaleString()} Words</span>
                   <div className="w-1.5 h-1.5 rounded-full bg-primary/40 hidden sm:block" />
                   <span className="text-foreground font-medium">{getBookProgress(currentBookData!.name)} Completed</span>
                 </div>
