@@ -78,7 +78,6 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground font-medium">
-                <Award className="w-4 h-4 text-primary" />
                 <span className="hidden sm:inline">{Math.round(totalCompletedWords).toLocaleString()} / {TOTAL_WORDS.toLocaleString()} Words</span>
               </div>
             </div>
