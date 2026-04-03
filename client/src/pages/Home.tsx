@@ -85,7 +85,7 @@ export default function Home() {
           
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="font-medium text-foreground">Overall Journey (by word count)</span>
+              <span className="font-medium text-foreground">Overall Bible Journey</span>
               <span className="font-serif font-bold text-primary">{progressPercentage.toFixed(2)}%</span>
             </div>
             <Progress value={progressPercentage} className="h-3" />
